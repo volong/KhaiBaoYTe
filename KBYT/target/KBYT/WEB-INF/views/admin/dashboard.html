@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="admin/layout :: header">
+
+</head>
+
+<body>
+<th:block th:replace="admin/layout :: nav-bar"></th:block>
+
+<div class="breadcomb-area">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                <div class="breadcomb-list">
+                    <div style="text-align: center">
+                        <h1>Thống kê</h1>
+                        <div>
+                            <label>Từ</label>
+                            <input type="date" id="startDate">
+
+                            <label>Đến</label>
+                            <input type="date" id="endDate">
+
+                            <button onclick="chart.init()">Thống kê</button>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 pdtop">
+                                <div class="css">
+                                    <h5>Triệu chứng</h5>
+                                    <canvas id="symptom" width="300" height="300"></canvas>
+                                </div>
+                            </div>
+
+
+                            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 pdtop">
+                                <div class="css">
+                                    <h5>Khai báo</h5>
+                                    <canvas id="person" width="300" height="300"></canvas>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<th:block th:replace="admin/layout :: footer"></th:block>
+<script src=" https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
+<th:block th:replace="admin/layout :: js"></th:block>
+<script th:src="@{/admin/js/vendor/jquery-1.12.4.min.js}"></script>
+
+<script>
+
+
+    var startdate = new Date(new Date() - 86400000 * 14);
+    let enddate = new Date();
+    let start = startdate.getFullYear() + '-' + ((startdate.getMonth() > 8) ? (startdate.getMonth() + 1) : ('0' + (startdate.getMonth() + 1))) + '-' + ((startdate.getDate() > 9) ? startdate.getDate() : ('0' + startdate.getDate()));
+    let end = enddate.getFullYear() + '-' + ((enddate.getMonth() > 8) ? (enddate.getMonth() + 1) : ('0' + (enddate.getMonth() + 1))) + '-' + ((enddate.getDate() > 9) ? enddate.getDate() : ('0' + enddate.getDate()));
+    document.getElementById("endDate").value = end + "";
+    document.getElementById("startDate").value = start + "";
+
+
+    var chart = {} || chart
+
+    let array1 = [];
+    let array2 = [];
+    let symptom = null;
+    let person = null;
+
+    chart.symptom = function () {
+        if (symptom != null) {
+            symptom.destroy();
+        }
+        var start = document.getElementById("startDate").value;
+        var end = document.getElementById("endDate").value;
+        $.ajax({
+            url: 'http://localhost:8080/json/countsymptom/' + start + '/' + end,
+            method: 'GET',
+            datatype: 'JSON',
+            success: function (data) {
+                array1 = [];
+                array2 = [];
+                $.each(data, function (i, symptom) {
+                    array1.push(symptom.listSymptom);
+                    array2.push(symptom.count);
+                })
+                var ctx = document.getElementById('symptom').getContext('2d');
+                symptom = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: array1,
+                        datasets: [{
+                            label: 'số người có triệu chứng',
+                            data: array2,
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.2)',
+                                'rgba(54, 162, 235, 0.2)',
+                                'rgba(255, 206, 86, 0.2)',
+                                'rgba(75, 192, 192, 0.2)',
+                                'rgba(153, 102, 255, 0.2)',
+                                'rgba(255, 159, 64, 0.2)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)',
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(153, 102, 255, 1)',
+                                'rgba(255, 159, 64, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            yAxes: [{
+                                ticks: {
+                                    beginAtZero: true
+                                }
+                            }]
+                        }
+                    }
+                });
+            }
+        })
+    }
+
+
+    chart.person = function () {
+        if (person != null) {
+            person.destroy();
+        }
+        var start = document.getElementById("startDate").value;
+        var end = document.getElementById("endDate").value;
+        $.ajax({
+            url: 'http://localhost:8080/json/countperson/' + start + '/' + end,
+            method: 'GET',
+            datatype: 'JSON',
+            success: function (data) {
+                array1 = [];
+                array2 = [];
+                $.each(data, function (i, person) {
+                    array1.push(person.date);
+                    array2.push(person.count);
+                })
+                var ctx = document.getElementById('person').getContext('2d');
+                person = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: array1,
+                        datasets: [{
+                            label: 'số người khai báo trong ngày',
+                            data: array2,
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.2)',
+                                'rgba(54, 162, 235, 0.2)',
+                                'rgba(255, 206, 86, 0.2)',
+                                'rgba(75, 192, 192, 0.2)',
+                                'rgba(153, 102, 255, 0.2)',
+                                'rgba(255, 159, 64, 0.2)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)',
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(153, 102, 255, 1)',
+                                'rgba(255, 159, 64, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            yAxes: [{
+                                ticks: {
+                                    beginAtZero: true
+                                }
+                            }]
+                        }
+                    }
+                });
+            }
+        })
+    }
+
+    chart.init = function () {
+        chart.symptom();
+        chart.person();
+    };
+
+    $(document).ready(function () {
+        chart.init();
+    })
+</script>
+
+
+<style>
+    .css {
+        padding-top: 10px;
+        background-color: white;
+    }
+
+    .pdtop {
+        padding-top: 25px;
+    }
+</style>
+
+
+</body>
+</html>
